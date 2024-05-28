@@ -13,6 +13,7 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@graphcms/rich-text-react-renderer": "^0.6.1",
+    "@mui/icons-material": "^5.15.18",
     "@mui/material": "^5.15.18",
     "graphql": "^16.8.1",
     "graphql-request": "^7.0.1",

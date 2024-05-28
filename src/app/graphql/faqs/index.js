@@ -15,7 +15,7 @@ const hygraph = new GraphQLClient(
 // );
 
 const QUERY = gql `
-query Faqs {
+query Faqs  {
     faqs {
       answer
       ask

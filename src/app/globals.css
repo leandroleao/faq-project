@@ -105,3 +105,12 @@ a {
     color-scheme: dark;
   }
 }
+
+body{
+  .ask{
+    font-weight: bold;
+  }
+  .answer{
+    padding: 15px;
+  }
+}

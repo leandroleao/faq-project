@@ -6,10 +6,14 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import data from './config.js';
-import {getFaqs} from './graphql/faqs/index.js';
+import { getFaqs } from './graphql/faqs/index.js';
 
-const faqs = getFaqs();
-//console.log('faqs', faqs);
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -19,7 +23,6 @@ interface TabPanelProps {
 
 function CustomTabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
-  
 
   return (
     <div
@@ -46,9 +49,44 @@ function changeTab(index: number) {
 }
 
 export default function Nav() {
+
   const [value, setValue] = React.useState(0);
-  const cat = data.categories.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-  //console.log(cat);
+  const cat = data.categories.sort((a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
+
+  const [faqsData, setFaqsData] = React.useState([])
+  const [faqsDataNormalized, setFaqsDataNormalized] = React.useState({})
+
+  const getTitle = (key) => {
+    let sel = cat.find((c) => { return c.key == key })
+    return sel?.name
+  }
+
+  React.useEffect(() => {
+    const getData = () => {
+      return new Promise((resolve, reject) => {
+        resolve(getFaqs())
+      })
+    }
+
+    getData().then((result) => {
+      setFaqsData(result.props.faqs);
+    })
+  }, [])
+
+  React.useEffect(() => {
+    let data = {};
+
+    cat.map((object) => {
+      data[object.key] = []
+    })
+
+    faqsData.map((faq) => {
+      data[faq.category].push(faq)
+    })
+
+    setFaqsDataNormalized(data);
+
+  }, [faqsData])
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -63,10 +101,31 @@ export default function Nav() {
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
-      {cat.map((object, i) => (
-        <span key={i}>{object.name}</span>
-      ))}
-        
+
+        {Object.entries(faqsDataNormalized).map(([key, value]) => (
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls={key}
+              id={key}
+            >
+              {getTitle(key)}
+            </AccordionSummary>
+            <AccordionDetails>
+              {value.map((item) => (
+                <div>
+                  <p className='ask'>{item.ask}</p>
+                  <p className='answer'>{item.answer}</p>
+                </div>
+
+              ))}
+            </AccordionDetails>
+          </Accordion>
+        ))}
+
+
+
+
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
         Item Two
