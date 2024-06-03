@@ -64,10 +64,6 @@ export async function publishFaq (id) {
   const result = await hygraph.request(PUBLISH)
 
   return result
-  // .then((res) => {
-  //   console.log(res)
-  //   return res
-  // })
 }
 
 

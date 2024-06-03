@@ -102,7 +102,7 @@ export default function Nav() {
     faqsData.map((faq) => {
       data[faq.category].push(faq)
     })
-    console.log("DATA NORMALIZED", data)
+
     setFaqsDataNormalized(data);
 
   }, [faqsData])
@@ -114,7 +114,6 @@ export default function Nav() {
       const publish = publishFaq(insertedFaq)
 
       publish.then((res) => {
-        console.log("publish", res)
         if (res?.publishFaq?.id) {
           getFaqs()
           setSuccessMessage(true)
@@ -220,7 +219,6 @@ export default function Nav() {
 
 
               result.then((res) => {
-                console.log("nav res", res)
                 setInsertedFaq(res.createFaq.id)
                 
               })
