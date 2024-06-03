@@ -113,4 +113,19 @@ body{
   .answer{
     padding: 15px;
   }
+
+  .form-box {
+    padding: 15px;
+    background-color: #FFF;
+  }
+
+  .form-box .text {
+    margin: 20px 0;    
+  }
+
+  .send-button {
+    display: flex;
+    margin: 20px auto;
+  }
+
 }
