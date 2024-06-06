@@ -128,4 +128,23 @@ body{
     margin: 20px auto;
   }
 
+  .faq-item{
+    padding: 5px;
+    min-height: 125px;
+  }
+  .faq-item .actions{
+    display: none;
+    justify-content: flex-end;
+  }
+  .faq-item .actions button{
+    margin: 0 10px;
+  }
+  .faq-item:hover{
+    outline: solid 1px #DDD;
+    background-color: #EEE;
+  }
+  .faq-item:hover .actions{
+    display: flex;
+  }
+
 }

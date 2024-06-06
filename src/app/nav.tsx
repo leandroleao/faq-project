@@ -6,7 +6,7 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import data from './config.js';
-import { getFaqs, sendFaq, publishFaq } from './graphql/faqs/index.js';
+import { getFaqs, sendFaq, publishFaq, deleteFaq } from './graphql/faqs/index.js';
 
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -19,6 +19,12 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+
 
 
 interface TabPanelProps {
@@ -26,6 +32,13 @@ interface TabPanelProps {
   index: number;
   value: number;
 }
+
+interface faq {
+  ask: string,
+  answer: string
+  category: string
+}
+
 
 function CustomTabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
@@ -48,6 +61,7 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 function changeTab(index: number) {
+  console.log('changeTab', index)
   return {
     id: `simple-tab-${index}`,
     'aria-controls': `simple-tabpanel-${index}`,
@@ -56,7 +70,7 @@ function changeTab(index: number) {
 
 export default function Nav() {
 
-  const getTitle = (key) => {
+  const getTitle = (key: string) => {
     let sel = cat.find((c) => { return c.key == key })
     return sel?.name
   }
@@ -75,31 +89,42 @@ export default function Nav() {
   const [successMessage, setSuccessMessage] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState(false)
   const [insertedFaq, setInsertedFaq] = React.useState()
+  const [open, setOpen] = React.useState(false);
+  const [deleteItem, setDeleteItem] = React.useState();
+  const [editItem, setEditItem] = React.useState({});
 
   const handleChangeCategory = (event: SelectChangeEvent) => {
     setCategory(event.target.value as string);
   };
 
-  React.useEffect(() => {
-    const getData = () => {
-      return new Promise((resolve, reject) => {
-        resolve(getFaqs())
-      })
-    }
+  const updateData = () => {
+    const getData = getFaqs()
 
-    getData().then((result) => {
+    getData.then((result: any) => {
       setFaqsData(result?.props.faqs);
     })
+  }
+
+  React.useEffect(() => {
+    updateData()
   }, [])
 
   React.useEffect(() => {
-    let data = {};
+    if (editItem) {
+      setAsk(editItem?.ask)
+      setAnswer(editItem?.answer)
+    }
+    
+  }, [editItem])
+
+  React.useEffect(() => {
+    let data: any = {};
 
     cat.map((object) => {
       data[object.key] = []
     })
 
-    faqsData.map((faq) => {
+    faqsData.map((faq: faq) => {
       data[faq.category].push(faq)
     })
 
@@ -115,7 +140,7 @@ export default function Nav() {
 
       publish.then((res) => {
         if (res?.publishFaq?.id) {
-          getFaqs()
+          updateData()
           setSuccessMessage(true)
         } else {
           setErrorMessage(true)
@@ -127,7 +152,24 @@ export default function Nav() {
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
-  };
+  }
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  }
+
+  const handleClose = () => {
+    setOpen(false)
+  }
+
+  const handleOK = () => {
+    const deleted = deleteFaq(deleteItem)  
+    
+    deleted.then(() => {
+      updateData()
+    })
+    setOpen(false)
+  }
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -143,6 +185,28 @@ export default function Nav() {
       {errorMessage && (
         <Alert severity="error" onClose={() => { setErrorMessage(false) }}>Não foi possível realizar o cadastro. Tente novamente mais tarde!</Alert>
       )}
+
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Desaja mesmo deletar o item?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Essa ação não poderá ser desfeita. Clique em OK para deletar o item ou cancelar para desistir.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleOK} autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
       <CustomTabPanel value={value} index={0} key={0}>
 
         {Object.entries(faqsDataNormalized).map(([key, val]) => (
@@ -155,10 +219,17 @@ export default function Nav() {
               {getTitle(key)}
             </AccordionSummary>
             <AccordionDetails>
-              {val.map((item, key) => (
-                <div key={key}>
-                  <p className='ask'>{item.ask}</p>
-                  <p className='answer'>{item.answer}</p>
+              {val.map((item, k) => (
+                <div className='faq-item' key={k}>
+                    <p className='ask'>{item.ask}</p>
+                    <p className='answer'>{item.answer}</p>
+
+                  <div className="actions">
+                    <Button {...changeTab(1)} onClick={() => { setEditItem(item) }}>EDITAR</Button>
+                    <Button onClick={() => {handleClickOpen(); setDeleteItem(item.id)}}>DELETAR</Button>
+                  </div>
+
+
                 </div>
 
               ))}
@@ -220,10 +291,10 @@ export default function Nav() {
 
               result.then((res) => {
                 setInsertedFaq(res.createFaq.id)
-                
+
               })
 
-              
+
 
               //publishFaq(res.id)
 
@@ -231,7 +302,7 @@ export default function Nav() {
         </Box>
 
       </CustomTabPanel>
-      
+
     </Box>
   );
 }

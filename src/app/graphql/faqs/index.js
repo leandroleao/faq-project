@@ -15,6 +15,7 @@ export async function getFaqs() {
           answer
           ask
           category
+          id
         }
       }
     `;
@@ -62,6 +63,20 @@ export async function publishFaq (id) {
   `
 
   const result = await hygraph.request(PUBLISH)
+
+  return result
+}
+
+export async function deleteFaq (id) {
+  const DEL = gql`
+  mutation deleteFaq{ 
+    deleteFaq(where: {id: "${id}"}) {
+    id
+    }
+  }
+  `
+
+  const result = await hygraph.request(DEL)
 
   return result
 }
