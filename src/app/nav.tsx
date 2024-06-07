@@ -6,7 +6,7 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import data from './config.js';
-import { getFaqs, sendFaq, publishFaq, deleteFaq } from './graphql/faqs/index.js';
+import { getFaqs, sendFaq, publishFaq, deleteFaq, updateFaq } from './graphql/faqs/index.js';
 
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -25,6 +25,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
+
 
 
 interface TabPanelProps {
@@ -37,35 +41,6 @@ interface faq {
   ask: string,
   answer: string
   category: string
-}
-
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-
-function changeTab(index: number) {
-  console.log('changeTab', index)
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
 }
 
 export default function Nav() {
@@ -86,7 +61,7 @@ export default function Nav() {
   const [ask, setAsk] = React.useState()
   const [answer, setAnswer] = React.useState()
   const [category, setCategory] = React.useState(cat[0].key)
-  const [successMessage, setSuccessMessage] = React.useState(false)
+  const [successMessage, setSuccessMessage] = React.useState("")
   const [errorMessage, setErrorMessage] = React.useState(false)
   const [insertedFaq, setInsertedFaq] = React.useState()
   const [open, setOpen] = React.useState(false);
@@ -114,7 +89,7 @@ export default function Nav() {
       setAsk(editItem?.ask)
       setAnswer(editItem?.answer)
     }
-    
+
   }, [editItem])
 
   React.useEffect(() => {
@@ -141,7 +116,7 @@ export default function Nav() {
       publish.then((res) => {
         if (res?.publishFaq?.id) {
           updateData()
-          setSuccessMessage(true)
+          setSuccessMessage("Cadastro realizado com sucesso!")
         } else {
           setErrorMessage(true)
         }
@@ -163,24 +138,25 @@ export default function Nav() {
   }
 
   const handleOK = () => {
-    const deleted = deleteFaq(deleteItem)  
-    
+    const deleted = deleteFaq(deleteItem)
+
     deleted.then(() => {
       updateData()
     })
     setOpen(false)
   }
 
+  const [myTab, setMyTab] = React.useState('1');
+
+  const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
+    setMyTab(newValue);
+  };
+
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-          <Tab label="FAQS" {...changeTab(0)} />
-          <Tab label="Cadastrar" {...changeTab(1)} />
-        </Tabs>
-      </Box>
+
       {successMessage && (
-        <Alert severity="success" onClose={() => { setSuccessMessage(false) }}>Cadastro realizado com sucesso!</Alert>
+        <Alert severity="success" onClose={() => { setSuccessMessage("") }}>{successMessage}</Alert>
       )}
       {errorMessage && (
         <Alert severity="error" onClose={() => { setErrorMessage(false) }}>Não foi possível realizar o cadastro. Tente novamente mais tarde!</Alert>
@@ -207,101 +183,142 @@ export default function Nav() {
           </Button>
         </DialogActions>
       </Dialog>
-      <CustomTabPanel value={value} index={0} key={0}>
 
-        {Object.entries(faqsDataNormalized).map(([key, val]) => (
-          <Accordion key={key}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls={key}
-              id={key}
-            >
-              {getTitle(key)}
-            </AccordionSummary>
-            <AccordionDetails>
-              {val.map((item, k) => (
-                <div className='faq-item' key={k}>
-                    <p className='ask'>{item.ask}</p>
-                    <p className='answer'>{item.answer}</p>
-
-                  <div className="actions">
-                    <Button {...changeTab(1)} onClick={() => { setEditItem(item) }}>EDITAR</Button>
-                    <Button onClick={() => {handleClickOpen(); setDeleteItem(item.id)}}>DELETAR</Button>
-                  </div>
-
-
-                </div>
-
-              ))}
-            </AccordionDetails>
-          </Accordion>
-        ))}
-
-      </CustomTabPanel>
-
-      <CustomTabPanel value={value} index={1} key={1}>
-        <Box className="form-box">
-          <h4 className='page-title'>CADASTRO FAQ</h4>
-          <TextField
-            className="text"
-            required
-            id="outlined-required"
-            //label="Pergunta"         
-            placeholder="Pergunta"
-            value={ask}
-            fullWidth
-            inputRef={textAsk}
-          />
-          <TextField
-            className="text"
-            required
-            id="outlined-required"
-            //label="Resposta"
-            placeholder="Resposta"
-            value={answer}
-            fullWidth
-            inputRef={textAnswer}
-          />
-
-          <InputLabel id="demo-simple-select-label">Categoria</InputLabel>
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={category}
-            label={getTitle(category)}
-            onChange={handleChangeCategory}
-          >
-            {cat.map((item) => (
-              <MenuItem key={item.key} value={item.key}>{item.name}</MenuItem>
-            ))}
-          </Select>
-
-          <Button
-            className='send-button'
-            variant="contained"
-            onClick={() => {
-              let formData = {
-                ask: textAsk?.current.value,
-                answer: textAnswer?.current.value,
-                category: String(category)
-              }
-
-              const result = sendFaq(formData)
-
-
-              result.then((res) => {
-                setInsertedFaq(res.createFaq.id)
-
-              })
-
-
-
-              //publishFaq(res.id)
-
-            }}>ENVIAR</Button>
+      <TabContext value={myTab}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <TabList onChange={handleChangeTab} aria-label="tabs">
+            <Tab label="FAQS" value="1" />
+            <Tab label="Cadastrar" value="2" />
+          </TabList>
         </Box>
 
-      </CustomTabPanel>
+        {
+          myTab == "1" && (
+            <TabPanel value="1">
+              {Object.entries(faqsDataNormalized).map(([key, val]) => (
+                <Accordion key={key}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls={key}
+                    id={key}
+                  >
+                    {getTitle(key)}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    {val.map((item, k) => (
+                      <div className='faq-item' key={k}>
+                        <p className='ask'>{item.ask}</p>
+                        <p className='answer'>{item.answer}</p>
+
+                        <div className="actions">
+                          <Button onClick={() => { setMyTab('2'); setEditItem(item) }}>EDITAR</Button>
+                          <Button onClick={() => { handleClickOpen(); setDeleteItem(item.id) }}>DELETAR</Button>
+                        </div>
+
+
+                      </div>
+
+                    ))}
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </TabPanel>
+          )
+        }
+
+        {
+          myTab == '2' && (
+            <TabPanel value="2">
+              <Box className="form-box">
+                <h4 className='page-title'>CADASTRO FAQ</h4>
+                <TextField
+                  className="text"
+                  name="ask"
+                  required
+                  id="outlined-required"
+                  //label="Pergunta"         
+                  placeholder="Pergunta"
+                  value={ask}
+                  fullWidth
+                  inputRef={textAsk}
+                  onChange={(value)=> {setAsk(value.target.value)}}
+                />
+                <TextField
+                  className="text"
+                  required
+                  name="answer"
+                  id="outlined-required"
+                  //label="Resposta"
+                  placeholder="Resposta"
+                  value={answer}
+                  fullWidth
+                  inputRef={textAnswer}
+                  onChange={(value)=> {setAnswer(value.target.value)}}
+                />
+
+                <InputLabel id="demo-simple-select-label">Categoria</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={category}
+                  label={getTitle(category)}
+                  onChange={handleChangeCategory}
+                >
+                  {cat.map((item) => (
+                    <MenuItem key={item.key} value={item.key}>{item.name}</MenuItem>
+                  ))}
+                </Select>
+
+                <Button
+                  className='send-button'
+                  variant="contained"
+                  onClick={() => {
+
+                    if (editItem) {
+
+                      let formData = {
+                        ask: textAsk?.current.value,
+                        answer: textAnswer?.current.value,
+                        category: String(category)
+                      }
+
+                      const result = updateFaq(editItem.id, formData)
+
+                       result.then((res) => {
+                         if(res.updateFaq.id) {
+                          publishFaq(res.updateFaq.id)
+                          setSuccessMessage('Edição realizada com sucesso!')
+                          setMyTab('1')
+                          setEditItem({})
+                          updateData()
+                         }
+  
+                       })
+
+                    } else {
+                      let formData = {
+                        ask: textAsk?.current.value,
+                        answer: textAnswer?.current.value,
+                        category: String(category)
+                      }
+  
+                      const result = sendFaq(formData)
+  
+  
+                      result.then((res) => {
+                        setInsertedFaq(res.createFaq.id)
+  
+                      })
+                    }              
+
+                  }}>ENVIAR</Button>
+              </Box>
+
+            </TabPanel>
+          )
+        }
+
+      </TabContext>
 
     </Box>
   );

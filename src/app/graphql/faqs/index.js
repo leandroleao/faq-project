@@ -81,4 +81,25 @@ export async function deleteFaq (id) {
   return result
 }
 
+export async function updateFaq (id, params) {
+  //console.log(id, params)
+  
+  const UP = gql`
+  mutation updateFaq{ 
+    updateFaq(where: {id: "${id}"}, 
+    data: {
+      ask: "${params.ask}"
+      answer: "${params.answer}"
+      category: "${params.category}"
+    }) {
+    id
+    }
+  }
+  `
+
+  const result = await hygraph.request(UP)
+
+  return result
+}
+
 
